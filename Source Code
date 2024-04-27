@@ -1,0 +1,420 @@
+#include <reg51.h>
+#include <stdio.h>
+#define port_key P3
+
+sbit rs=P1^2;
+sbit rw=P1^1; 
+sbit en=P1^0; 
+
+sbit rd_adc	=P1^7;		
+sbit	wr_adc	=P1^6;		
+sbit	intr_adc	=P1^5;		
+sbit	selA	=P1^3;			
+sbit	selB	=P1^4;	
+sbit	selC	=P3^7;			
+void delay(unsigned int);
+void cmdwrt(unsigned char);
+void datawrt(unsigned char);
+void con_to_disp(unsigned char);
+unsigned char key_detect();
+void dispString(unsigned char[]);
+void convertnum(unsigned char num);
+unsigned char keypad[4][4] = {{'7', '8', '9', '/'},
+			{'4', '5', '6', 'X'},
+			{'1', '2', '3', '-'},
+			{' ', '0', '=', '+'},
+		};
+									  
+										
+unsigned char colloc, rowloc;
+unsigned char maxval = 50;
+unsigned char minval = -30;
+void main(void)
+ {
+        unsigned char flag;
+	unsigned char i;
+	unsigned char cmd[]={0x38,0x0f,0x01,0x80};
+        unsigned char buffer1[]="cha:";        
+        unsigned char buffer2[]="Max:";
+	unsigned char buffer3[]="Min:";
+	unsigned char buffer4[]="Avg:";	
+	unsigned char value1,value2,value3,value4,value5,value6,value7,value8;
+        unsigned char cha,maxval,minval,avev;
+        unsigned int num=0; 	
+	unsigned char disval, ch;
+	unsigned int temp;
+	P2=0xFF;	
+	P0=0x00;	
+for(i=0;i<4;i++) 
+{
+	cmdwrt(cmd[i]);
+	delay(1);
+}
+	intr_adc = 1;
+	rd_adc = 1;
+	delay(1);		
+while(1)
+	{
+       flag=0;
+		selA = 0;
+		selB = 0;
+		selC = 0;
+		wr_adc=0;
+		delay(1);
+		wr_adc=1;
+  while(intr_adc==1); 
+		rd_adc=0; 
+		value1=P2;
+		delay(10);
+		rd_adc=0;
+		delay(10);
+		rd_adc=1;
+
+		selA = 1;
+		selB= 0;
+		selC = 0;
+		wr_adc=0;
+		delay(1);
+		 wr_adc=1;
+  while(intr_adc==1); 
+		rd_adc=0; 
+		value2=P2;
+		delay(10);
+		rd_adc=0;
+		delay(10);
+		rd_adc=1;
+
+		selA = 0;
+		selB= 1;
+		selC = 0;
+		wr_adc=0;
+		delay(1);
+		 wr_adc=1;
+  while(intr_adc==1); 
+		rd_adc=0; 
+		value3=P2;
+		delay(10);
+		rd_adc=0;
+		delay(10);
+		rd_adc=1;
+
+		selA = 1;
+		selB= 1;
+		selC = 0;
+		wr_adc=0;
+		delay(1);
+		 wr_adc=1;
+  while(intr_adc==1); 
+		rd_adc=0; 
+		value4=P2;
+		delay(10);
+		rd_adc=0;
+		delay(10);
+		rd_adc=1;
+
+		selA = 0;
+		selB= 0;
+		selC = 1;
+		wr_adc=0;
+		delay(1);
+		wr_adc=1;
+  while(intr_adc==1);
+		rd_adc=0; 
+		value5=P2;
+		delay(10);
+		rd_adc=0;
+		delay(10);
+		rd_adc=1;
+
+		selA = 1;
+		selB= 0;
+		selC = 1;
+		wr_adc=0;
+		delay(1);
+		wr_adc=1;
+  while(intr_adc==1);
+		rd_adc=0; 
+		value6=P2;
+		delay(10);
+		rd_adc=0;
+		delay(10);
+		rd_adc=1;
+
+		selA = 0;
+		selB= 1;
+		selC = 1;
+		wr_adc=0;
+		delay(1);
+		wr_adc=1;
+  while(intr_adc==1);
+		rd_adc=0; 
+		value7=P2;
+		delay(10);
+		rd_adc=0;
+		delay(10);
+		rd_adc=1;
+
+		selA = 1;
+		selB= 1;
+		selC = 1;
+		wr_adc=0;
+		delay(1);
+		wr_adc=1;
+  while(intr_adc==1);
+		rd_adc=0; 
+		value8=P2;
+		delay(10);
+		rd_adc=0;
+		delay(10);
+		rd_adc=1;
+		
+dispString("channel :"); 
+      ch = key_detect();
+      datawrt(ch);
+                        if(ch=='='){			
+			if (ch == '1') {
+                          disval = value1;
+                        } else if (ch == '2') {
+                          disval = value2;
+                        } else if (ch == '3') {
+                          disval = value3;
+                        } else if (ch == '4') {
+                          disval = value4;
+                        } else if (ch == '5') {
+                          disval = value5;
+                        } else if (ch == '6') {
+                          disval = value6;
+                        } else if (ch == '7') {
+                          disval = value7;
+                        } else if (ch == '8') {
+                          disval = value8;
+                        }}
+			else
+			   ch=ch;
+			cmdwrt(0xc0);
+			con_to_disp(disval);
+                maxval=value1;
+		minval=-value1;
+		avev = (value1 + value2 + value3 + value4 + value5 + value6 + value7 + value8)/8;
+                if (value1 > maxval){
+				maxval = value1;
+			}		
+		else if (value2 > maxval){
+				maxval = value2;
+			}
+		else if (value3 > maxval){
+				maxval = value3;
+			}
+		else if (value4 > maxval){
+				maxval = value4;
+			}
+                else if (value5 > maxval){
+				maxval = value5;
+			}
+		else if (value6 > maxval){
+				maxval = value6;
+			}
+		else if (value7 > maxval){
+				maxval = value7;
+			}
+                else if (value8 > maxval){
+				maxval = value8;
+			}			
+	
+if(value1 < minval){
+				minval = value1;
+			}		
+		if(value2 < minval){
+				minval = value2;
+			}
+		if(value3 < minval){
+				minval = value3;
+			}
+		if(value4 < minval){
+				minval = value4;
+			}
+               if(value5 < minval){
+				minval = value5;
+			}
+		if(value6 < minval){
+				minval = value6;
+			}
+		if(value7 < minval){
+				minval = value7;
+			}
+                if(value8 < minval){
+				minval = value8;
+			}
+				
+			cmdwrt(0x80);
+                		
+		   for(i=0;i<4;i++) 
+			{
+				datawrt(buffer2[i]);
+				delay(1);
+			}
+                     con_to_disp(maxval);
+
+                    cmdwrt(0x88);
+		   for(i=0;i<4;i++) 
+                    {
+		   datawrt(buffer3[i]);  
+		  delay(1);
+                  }
+	          con_to_disp(minval);
+
+                cmdwrt(0xc0);
+		   for(i=0;i<4;i++)
+                 {
+		datawrt(buffer4[i]);
+		delay(1);
+                   }
+	         con_to_disp(avev);
+dispString("ch:");
+con_to_disp(num);
+			delay(200);
+			cmdwrt(0x01);
+			delay(10);
+			cmdwrt(0x80);
+
+	}		
+ }	
+
+unsigned char key_detect()
+{
+	port_key = 0xf0;
+	do
+	{
+		port_key = 0xf0;
+		colloc = port_key;
+		colloc &= 0xf0;
+	
+	}while(colloc != 0xf0);
+	
+	do
+	{
+		do
+		{
+			delay(20);
+			colloc = (port_key & 0xf0);
+		}while(colloc == 0xf0);
+		
+		delay(1);
+		colloc = (port_key & 0xf0);
+	}while(colloc == 0xf0);
+	
+	while(1)
+	{
+		port_key = 0xfe;
+		colloc = (port_key & 0xf0);
+		if(colloc != 0xf0)
+		{
+			rowloc = 0;
+			break;
+		}
+		
+		port_key = 0xfd;
+		colloc = (port_key & 0xf0);
+		if(colloc != 0xf0)
+		{
+			rowloc = 1;
+			break;
+		}
+		
+		port_key = 0xfb;
+		colloc = (port_key & 0xf0);
+		if(colloc != 0xf0)
+		{
+			rowloc = 2;
+			break;
+		}
+		
+		port_key = 0xf7;
+		colloc = (port_key & 0xf0);
+		if(colloc != 0xf0)
+		{
+			rowloc = 3;
+			break;
+		}
+	}	
+	
+	if(colloc == 0xe0)
+	{
+		return(keypad[rowloc][0]);
+	}
+	else if(colloc == 0xd0)
+	{
+		return(keypad[rowloc][1]);
+	}
+	else if(colloc == 0xb0)
+	{
+		return(keypad[rowloc][2]);
+	}
+	 else if (colloc==0x70){
+                return keypad[rowloc][3];  
+        }
+	
+}
+ 
+
+void cmdwrt (unsigned char x)
+{ 
+   P0=x;  
+   rs=0;  
+   rw=0; 
+   en=1; 
+   delay(1);
+   en=0;
+}
+
+void datawrt (unsigned char y)
+{ 
+   P0=y;
+   rs=1;
+   rw=0; 
+   en=1; 
+   delay(1);
+   en=0;
+}
+
+void delay(unsigned int z)
+{
+  unsigned int p,q;
+  for(p=0;p<z;p++)    
+  {
+    for(q=0;q<1375;q++); 
+  }
+}
+
+void con_to_disp(unsigned char value)
+{
+  unsigned char x1,x2,x3;
+ if (value < -30) {
+    value = -30;
+  } else if (value > 50) {
+    value = 50;
+  }
+    else if (value < 0) {
+    datawrt('-');
+    value = -value;
+  } 
+   else
+    value=value; 
+
+	x1=(value/10);
+	x1=x1+(0x30);
+	x2=value%10; 
+	x2=x2+(0x30); 
+	x3=0xDF;
+  datawrt(x1); 
+  datawrt(x2);
+  datawrt(x3);
+  datawrt('C'); 
+  
+}  
+
+void dispString(char s[]){
+ unsigned char i;
+ for(i=0;s[i]!='\0';i++)
+      datawrt(s[i]);
+}
